@@ -2,7 +2,7 @@
 
 A simple C-c C-v tool in command line.
 
-Inspired by MACOS built-in Command-c Command-v.
+Inspired by `MACOS` built-in `⌘-c` `⌘-v`.
 
 ## Install
 
@@ -15,7 +15,7 @@ cargo install cyrs
 ```
 cyrs 0.1
 
-ycy <yytcjcy@gmail.com>
+ycycwx <yytcjcy@gmail.com>
 
 A simple C-c C-v tool in command line.
 

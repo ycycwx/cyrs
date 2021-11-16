@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .about("A simple C-c C-v tool in command line.")
         .license("MIT")
         .version("0.1")
-        .author("ycy <yytcjcy@gmail.com>")
+        .author("ycycwx <yytcjcy@gmail.com>")
         .subcommand(
             App::new("add").visible_alias("a").about("add files").arg(
                 Arg::new("file")
