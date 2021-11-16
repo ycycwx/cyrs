@@ -4,6 +4,8 @@ A simple C-c C-v tool in command line.
 
 Inspired by `MACOS` built-in `⌘-c` `⌘-v`.
 
+> STILL WORK IN PROGRESS.
+
 ## Install
 
 ``` bash
