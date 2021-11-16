@@ -12,18 +12,25 @@ cargo install cyrs
 
 ## Usage
 
-``` bash
+```
+cyrs 0.1
+
+ycy <yytcjcy@gmail.com>
+
+A simple C-c C-v tool in command line.
+
 USAGE:
-    cyrs [SUBCOMMAND]
+    cy [SUBCOMMAND]
 
 OPTIONS:
     -h, --help       Print help information
     -V, --version    Print version information
 
 SUBCOMMANDS:
-    add      add files
-    copy     copy files
+    add      add files [aliases: a]
+    copy     copy files [aliases: c, cp]
     help     Print this message or the help of the given subcommand(s)
-    list     list files
-    move     move files
+    list     list files [aliases: l, ls, show]
+    move     move files [aliases: m, mv]
+    reset    reset temporary zone [aliases: clear]
 ```
