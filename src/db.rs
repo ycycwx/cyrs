@@ -1,16 +1,16 @@
-extern crate dirs;
 extern crate fs_extra;
 extern crate serde;
 extern crate serde_json;
 
+use std::env;
 use std::error::Error;
 use std::fs::canonicalize;
+use std::fs::create_dir_all;
 use std::fs::read_to_string;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use dirs::home_dir;
 use fs_extra::copy_items;
 use fs_extra::dir::CopyOptions;
 use fs_extra::move_items;
@@ -20,20 +20,20 @@ use crate::chalk;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DataBase {
-    config_path: PathBuf,
+    cache_path: PathBuf,
     db: Vec<String>,
 }
 
-fn get_config_path() -> Result<PathBuf, Box<dyn Error>> {
-    Ok(match home_dir() {
-        Some(dir) => dir.join(".cy"),
-        None => panic!("{}", chalk::red("Cannot find $HOME path")),
-    })
+fn initialize_cache_path() -> Result<PathBuf, Box<dyn Error>> {
+    let home = env::var("HOME")?;
+    let config_dir = PathBuf::from(&home).join(".cache");
+    create_dir_all(&config_dir.join("cyrs"))?;
+    Ok(config_dir.join("cyrs/cy.json"))
 }
 
 fn read_config(config_path: &Path) -> Result<Vec<String>, Box<dyn Error>> {
     let json_str = if config_path.exists() {
-        read_to_string(get_config_path()?)?
+        read_to_string(initialize_cache_path()?)?
     } else {
         File::create(config_path)?.write_all("[]".as_bytes())?;
         "[]".to_string()
@@ -53,9 +53,9 @@ pub trait DataBaseHandler: Sized {
 
 impl DataBaseHandler for DataBase {
     fn new() -> Result<Self, Box<dyn Error>> {
-        let config_path = get_config_path()?;
+        let config_path = initialize_cache_path()?;
         let db = read_config(&config_path)?;
-        Ok(DataBase { config_path, db })
+        Ok(DataBase { cache_path: config_path, db })
     }
 
     fn add(&mut self, files: &[String]) -> Result<(), Box<dyn Error>> {
@@ -67,14 +67,14 @@ impl DataBaseHandler for DataBase {
             }
         }
 
-        let mut config = File::create(get_config_path()?)?;
+        let mut config = File::create(initialize_cache_path()?)?;
         let json = serde_json::to_string_pretty(&self.db)?;
         write!(config, "{}", json)?;
         Ok(())
     }
 
     fn reset(&self) -> Result<(), Box<dyn Error>> {
-        let mut config = File::create(&self.config_path)?;
+        let mut config = File::create(&self.cache_path)?;
         write!(config, "[]")?;
         Ok(())
     }
@@ -141,7 +141,7 @@ impl DataBaseHandler for DataBase {
         }
 
         // write config with failed files after move
-        let mut config = File::create(&self.config_path)?;
+        let mut config = File::create(&self.cache_path)?;
         println!("{}", serde_json::to_string_pretty(&failed_items)?);
         write!(config, "{}", serde_json::to_string_pretty(&failed_items)?)?;
 
