@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .version("0.0.2")
         .author("ycycwx <yytcjcy@gmail.com>")
         .subcommand(
-            App::new("add").visible_alias("a").about("mark files into temporary zone").arg(
+            App::new("add").visible_alias("a").about("Mark files into temporary zone").arg(
                 Arg::new("file")
                     .about("Mark <file>s into temporary zone for `COPY/MOVE`")
                     .required(true)

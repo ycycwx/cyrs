@@ -29,7 +29,7 @@ OPTIONS:
     -V, --version    Print version information
 
 SUBCOMMANDS:
-    add      mark files into temporary zone [aliases: a]
+    add      Mark files into temporary zone [aliases: a]
     copy     Copy temporary files to target dir [aliases: c, cp]
     help     Print this message or the help of the given subcommand(s)
     list     List all temporary files [aliases: l, ls, show]
