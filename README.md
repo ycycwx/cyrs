@@ -29,10 +29,10 @@ OPTIONS:
     -V, --version    Print version information
 
 SUBCOMMANDS:
-    add      add files [aliases: a]
-    copy     copy files [aliases: c, cp]
+    add      mark files into temporary zone [aliases: a]
+    copy     Copy temporary files to target dir [aliases: c, cp]
     help     Print this message or the help of the given subcommand(s)
-    list     list files [aliases: l, ls, show]
-    move     move files [aliases: m, mv]
-    reset    reset temporary zone [aliases: clear]
+    list     List all temporary files [aliases: l, ls, show]
+    move     Move temporary files to target dir [aliases: m, mv]
+    reset    Reset temporary zone [aliases: clear]
 ```

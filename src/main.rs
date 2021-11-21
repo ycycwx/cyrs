@@ -32,21 +32,21 @@ fn main() -> Result<(), Box<dyn Error>> {
         .version("0.1")
         .author("ycycwx <yytcjcy@gmail.com>")
         .subcommand(
-            App::new("add").visible_alias("a").about("add files").arg(
+            App::new("add").visible_alias("a").about("mark files into temporary zone").arg(
                 Arg::new("file")
-                    .about("Mark files to `COPY/MOVE` into temporary zone.")
+                    .about("Mark <file>s into temporary zone for `COPY/MOVE`")
                     .required(true)
                     .min_values(1),
             ),
         )
-        .subcommand(App::new("copy").visible_aliases(&["c", "cp"]).about("copy files").arg(
-            Arg::new("file").about("Copy files into target folder").required(true).max_values(1),
+        .subcommand(App::new("copy").visible_aliases(&["c", "cp"]).about("Copy temporary files to target dir").arg(
+            Arg::new("dir").about("Copy files into target <dir>").required(true).max_values(1),
         ))
-        .subcommand(App::new("move").visible_aliases(&["m", "mv"]).about("move files").arg(
-            Arg::new("file").about("Move files into target folder.").required(true).max_values(1),
+        .subcommand(App::new("move").visible_aliases(&["m", "mv"]).about("Move temporary files to target dir").arg(
+            Arg::new("dir").about("Move files into target <dir>").required(true).max_values(1),
         ))
-        .subcommand(App::new("list").visible_aliases(&["l", "ls", "show"]).about("list files"))
-        .subcommand(App::new("reset").visible_alias("clear").about("reset temporary zone"))
+        .subcommand(App::new("list").visible_aliases(&["l", "ls", "show"]).about("List all temporary files"))
+        .subcommand(App::new("reset").visible_alias("clear").about("Reset temporary zone"))
         .get_matches();
 
     let mut database = DataBase::new()?;
