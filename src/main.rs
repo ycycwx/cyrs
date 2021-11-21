@@ -39,13 +39,33 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .min_values(1),
             ),
         )
-        .subcommand(App::new("copy").visible_aliases(&["c", "cp"]).about("Copy temporary files to target dir").arg(
-            Arg::new("dir").about("Copy files into target <dir>").required(true).max_values(1),
-        ))
-        .subcommand(App::new("move").visible_aliases(&["m", "mv"]).about("Move temporary files to target dir").arg(
-            Arg::new("dir").about("Move files into target <dir>").required(true).max_values(1),
-        ))
-        .subcommand(App::new("list").visible_aliases(&["l", "ls", "show"]).about("List all temporary files"))
+        .subcommand(
+            App::new("copy")
+                .visible_aliases(&["c", "cp"])
+                .about("Copy temporary files to target dir")
+                .arg(
+                    Arg::new("dir")
+                        .about("Copy files into target <dir>")
+                        .required(true)
+                        .max_values(1),
+                ),
+        )
+        .subcommand(
+            App::new("move")
+                .visible_aliases(&["m", "mv"])
+                .about("Move temporary files to target dir")
+                .arg(
+                    Arg::new("dir")
+                        .about("Move files into target <dir>")
+                        .required(true)
+                        .max_values(1),
+                ),
+        )
+        .subcommand(
+            App::new("list")
+                .visible_aliases(&["l", "ls", "show"])
+                .about("List all temporary files"),
+        )
         .subcommand(App::new("reset").visible_alias("clear").about("Reset temporary zone"))
         .get_matches();
 
