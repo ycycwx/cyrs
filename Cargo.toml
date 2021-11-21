@@ -7,6 +7,8 @@ license = "MIT"
 description = """
 A simple C-c C-v tool in command line.
 """
+documentation = "https://github.com/ycycwx/cyrs"
+homepage = "https://github.com/ycycwx/cyrs"
 
 [[bin]]
 name = "cy"
