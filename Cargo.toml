@@ -3,6 +3,10 @@ name = "cyrs"
 version = "0.0.1"
 authors = ["ycycwx <yytcjcy@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = """
+A simple C-c C-v tool in command line.
+"""
 
 [[bin]]
 name = "cy"
