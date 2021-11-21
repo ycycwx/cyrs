@@ -2,7 +2,7 @@
 
 A simple C-c C-v tool in command line.
 
-Inspired by `MACOS` built-in `⌘-c` `⌘-v`.
+Inspired by `MACOS` built-in **copy**(`⌘c`) **paste**(`⌘⌥c`) **move**(`⌘⌥v`).
 
 > STILL WORK IN PROGRESS.
 
