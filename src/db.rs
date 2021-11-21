@@ -1,4 +1,5 @@
 extern crate fs_extra;
+extern crate log;
 extern crate serde;
 extern crate serde_json;
 
@@ -80,29 +81,19 @@ impl DataBaseHandler for DataBase {
     }
 
     fn cp(&self, files: &[String]) -> Result<(), Box<dyn Error>> {
-        if files.len() != 1 {
-            panic!("{}", chalk::red("You must choose one target dir"));
-        }
-
         let target_dir = canonicalize(&files[0])?.as_path().display().to_string();
         for file in &self.db {
             let full_path = canonicalize(file)?;
             let options = CopyOptions::new();
             match copy_items(&[full_path], &target_dir, &options) {
                 Ok(_) => {
-                    println!(
-                        "{}",
-                        chalk::green(&format!("Success copy file {} to {}", file, target_dir))
-                    );
+                    chalk::info(format!("Success copy file {} to {}", file, target_dir));
                 }
                 Err(err) => {
-                    eprintln!(
-                        "{}",
-                        chalk::red(&format!(
-                            "Fail to copy file {} to {}. Reason: {}",
-                            file, target_dir, err
-                        ))
-                    );
+                    chalk::error(format!(
+                        "Fail to copy file {} to {}. Reason: {}",
+                        file, target_dir, err
+                    ));
                 }
             };
         }
@@ -110,8 +101,9 @@ impl DataBaseHandler for DataBase {
     }
 
     fn mv(&self, files: &[String]) -> Result<(), Box<dyn Error>> {
-        if files.len() != 1 {
-            panic!("{}", chalk::red("You must choose one target dir"));
+        if self.db.is_empty() {
+            chalk::warn("You must exec `cy add $FILE` first.");
+            return Ok(());
         }
 
         let mut failed_items: Vec<String> = vec![];
@@ -120,20 +112,12 @@ impl DataBaseHandler for DataBase {
             let full_path = canonicalize(file)?;
             let options = CopyOptions::new();
             match move_items(&[full_path], &target_dir, &options) {
-                Ok(_) => {
-                    println!(
-                        "{}",
-                        chalk::green(&format!("Success move file {} to {}", file, target_dir))
-                    );
-                }
+                Ok(_) => chalk::info(format!("Success move file {} to {}", file, target_dir)),
                 Err(err) => {
-                    eprintln!(
-                        "{}",
-                        chalk::red(&format!(
-                            "Fail to move file {} to {}. Reason: {}",
-                            file, target_dir, err
-                        ))
-                    );
+                    chalk::error(format!(
+                        "Fail to move file {} to {}. Reason: {}",
+                        file, target_dir, err
+                    ));
 
                     failed_items.push(file.to_string());
                 }
@@ -142,7 +126,7 @@ impl DataBaseHandler for DataBase {
 
         // write config with failed files after move
         let mut config = File::create(&self.cache_path)?;
-        println!("{}", serde_json::to_string_pretty(&failed_items)?);
+        chalk::info(serde_json::to_string_pretty(&failed_items)?);
         write!(config, "{}", serde_json::to_string_pretty(&failed_items)?)?;
 
         Ok(())
@@ -150,7 +134,7 @@ impl DataBaseHandler for DataBase {
 
     fn list(&self) {
         self.db.iter().enumerate().for_each(|(index, item)| {
-            println!("{}", chalk::green(&((index + 1).to_string() + ". " + item)))
+            chalk::info((index + 1).to_string() + ". " + item);
         })
     }
 }

@@ -2,9 +2,12 @@ pub mod chalk;
 pub mod db;
 
 extern crate clap;
+extern crate env_logger;
+extern crate log;
+
+use std::error::Error;
 
 use clap::{App, Arg, ArgMatches};
-use std::error::Error;
 
 use crate::db::{DataBase, DataBaseHandler};
 
@@ -15,7 +18,14 @@ fn unwrap_args(arg_matches: &ArgMatches, id: &str) -> Vec<String> {
     }
 }
 
+fn init_logger_env() {
+    let env = env_logger::Env::default().default_filter_or("info");
+    env_logger::init_from_env(env);
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
+    init_logger_env();
+
     let matches = App::new("cyrs")
         .about("A simple C-c C-v tool in command line.")
         .license("MIT")
@@ -47,7 +57,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Some(("move", matches)) => database.mv(&unwrap_args(matches, "file"))?,
         Some(("list", _)) => database.list(),
         Some(("reset", _)) => database.reset()?,
-        None => println!("No subcommand was used"),
+        None => chalk::error("No subcommand was used"),
         _ => unreachable!(),
     }
 
