@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("cyrs")
         .about("A simple C-c C-v tool in command line.")
         .license("MIT")
-        .version("0.1")
+        .version("0.0.2")
         .author("ycycwx <yytcjcy@gmail.com>")
         .subcommand(
             App::new("add").visible_alias("a").about("mark files into temporary zone").arg(
