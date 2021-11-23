@@ -15,7 +15,7 @@ cargo install cyrs
 ## Usage
 
 ```
-cyrs 0.0.2
+cyrs 0.0.3
 
 ycycwx <yytcjcy@gmail.com>
 
@@ -29,10 +29,10 @@ OPTIONS:
     -V, --version    Print version information
 
 SUBCOMMANDS:
-    add      Mark files into temporary zone [aliases: a]
-    copy     Copy temporary files to target dir [aliases: c, cp]
+    add      Mark files into clipboard [aliases: a]
+    copy     Copy all files in clipboard to target dir [aliases: c, cp]
     help     Print this message or the help of the given subcommand(s)
-    list     List all temporary files [aliases: l, ls, show]
-    move     Move temporary files to target dir [aliases: m, mv]
-    reset    Reset temporary zone [aliases: clear]
+    list     List all files in clipboard [aliases: l, ls, show]
+    move     Move all files in clipboard to target dir [aliases: m, mv]
+    reset    Reset clipboard [aliases: clear]
 ```

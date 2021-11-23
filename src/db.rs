@@ -17,7 +17,9 @@ use fs_extra::dir::CopyOptions;
 use fs_extra::move_items;
 use serde::{Deserialize, Serialize};
 
-use crate::chalk;
+use log::error;
+use log::info;
+use log::warn;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DataBase {
@@ -46,10 +48,10 @@ fn read_config(config_path: &Path) -> Result<Vec<String>, Box<dyn Error>> {
 pub trait DataBaseHandler: Sized {
     fn new() -> Result<Self, Box<dyn Error>>;
     fn add(&mut self, files: &[String]) -> Result<(), Box<dyn Error>>;
-    fn reset(&self) -> Result<(), Box<dyn Error>>;
     fn cp(&self, files: &[String]) -> Result<(), Box<dyn Error>>;
     fn mv(&self, files: &[String]) -> Result<(), Box<dyn Error>>;
     fn list(&self);
+    fn reset(&self) -> Result<(), Box<dyn Error>>;
 }
 
 impl DataBaseHandler for DataBase {
@@ -74,26 +76,27 @@ impl DataBaseHandler for DataBase {
         Ok(())
     }
 
-    fn reset(&self) -> Result<(), Box<dyn Error>> {
-        let mut config = File::create(&self.cache_path)?;
-        write!(config, "[]")?;
-        Ok(())
-    }
-
     fn cp(&self, files: &[String]) -> Result<(), Box<dyn Error>> {
+        if self.db.is_empty() {
+            warn!("You must exec `cy add <file>...` first.");
+            return Ok(());
+        }
+
+        if files.is_empty() {
+            warn!("You must choose an existing target <dir>.");
+            return Ok(());
+        }
+
         let target_dir = canonicalize(&files[0])?.as_path().display().to_string();
         for file in &self.db {
             let full_path = canonicalize(file)?;
             let options = CopyOptions::new();
             match copy_items(&[full_path], &target_dir, &options) {
                 Ok(_) => {
-                    chalk::info(format!("Success copy file {} to {}", file, target_dir));
+                    info!("Success copy file {} to {}.", file, target_dir);
                 }
                 Err(err) => {
-                    chalk::error(format!(
-                        "Fail to copy file {} to {}. Reason: {}",
-                        file, target_dir, err
-                    ));
+                    error!("Fail to copy file {} to {}. Reason: {}.", file, target_dir, err);
                 }
             };
         }
@@ -102,7 +105,12 @@ impl DataBaseHandler for DataBase {
 
     fn mv(&self, files: &[String]) -> Result<(), Box<dyn Error>> {
         if self.db.is_empty() {
-            chalk::warn("You must exec `cy add $FILE` first.");
+            warn!("You must exec `cy add <file>...` first.");
+            return Ok(());
+        }
+
+        if files.is_empty() {
+            warn!("You must choose an existing target <dir>.");
             return Ok(());
         }
 
@@ -112,12 +120,9 @@ impl DataBaseHandler for DataBase {
             let full_path = canonicalize(file)?;
             let options = CopyOptions::new();
             match move_items(&[full_path], &target_dir, &options) {
-                Ok(_) => chalk::info(format!("Success move file {} to {}", file, target_dir)),
+                Ok(_) => info!("Success move file {} to {}", file, target_dir),
                 Err(err) => {
-                    chalk::error(format!(
-                        "Fail to move file {} to {}. Reason: {}",
-                        file, target_dir, err
-                    ));
+                    error!("Fail to move file {} to {}. Reason: {}", file, target_dir, err);
 
                     failed_items.push(file.to_string());
                 }
@@ -126,15 +131,29 @@ impl DataBaseHandler for DataBase {
 
         // write config with failed files after move
         let mut config = File::create(&self.cache_path)?;
-        chalk::info(serde_json::to_string_pretty(&failed_items)?);
+        info!("{}", serde_json::to_string_pretty(&failed_items)?);
         write!(config, "{}", serde_json::to_string_pretty(&failed_items)?)?;
 
         Ok(())
     }
 
     fn list(&self) {
+        if self.db.is_empty() {
+            info!("Clipboard is empty. You can exec `cy add <file>...` to add files.");
+            return;
+        }
+
         self.db.iter().enumerate().for_each(|(index, item)| {
-            chalk::info((index + 1).to_string() + ". " + item);
+            info!("{}", (index + 1).to_string() + ". " + item);
         })
+    }
+
+    fn reset(&self) -> Result<(), Box<dyn Error>> {
+        let mut config = File::create(&self.cache_path)?;
+        match write!(config, "[]") {
+            Ok(()) => info!("Reset clipboard successfully."),
+            Err(err) => error!("{}", err.to_string()),
+        };
+        Ok(())
     }
 }
