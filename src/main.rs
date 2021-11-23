@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("cyrs")
         .about("A simple C-c C-v tool in command line.")
         .license("MIT")
-        .version("0.0.3")
+        .version("0.0.4")
         .author("ycycwx <yytcjcy@gmail.com>")
         .subcommand(
             App::new("add").visible_alias("a").about("Mark files into clipboard").arg(
@@ -68,8 +68,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match matches.subcommand() {
         Some(("add", matches)) => database.add(&unwrap_args(matches, "file"))?,
-        Some(("copy", matches)) => database.cp(&unwrap_args(matches, "file"))?,
-        Some(("move", matches)) => database.mv(&unwrap_args(matches, "file"))?,
+        Some(("copy", matches)) => database.cp(&unwrap_args(matches, "dir"))?,
+        Some(("move", matches)) => database.mv(&unwrap_args(matches, "dir"))?,
         Some(("list", _)) => database.list(),
         Some(("reset", _)) => database.reset()?,
         None => error!("No subcommand was used"),

@@ -64,7 +64,10 @@ impl DataBaseHandler for DataBase {
     fn add(&mut self, files: &[String]) -> Result<(), Box<dyn Error>> {
         for file in files {
             let full_path = canonicalize(file)?;
-            if !self.db.contains(&full_path.as_path().display().to_string()) {
+            let real_path = full_path.as_path().display().to_string();
+            if self.db.contains(&real_path) {
+                warn!("\"{}\" is duplicated in clipboard.", &real_path);
+            } else {
                 let full_path = canonicalize(file)?;
                 self.db.push(full_path.as_path().display().to_string());
             }
@@ -131,7 +134,6 @@ impl DataBaseHandler for DataBase {
 
         // write config with failed files after move
         let mut config = File::create(&self.cache_path)?;
-        info!("{}", serde_json::to_string_pretty(&failed_items)?);
         write!(config, "{}", serde_json::to_string_pretty(&failed_items)?)?;
 
         Ok(())
@@ -139,7 +141,7 @@ impl DataBaseHandler for DataBase {
 
     fn list(&self) {
         if self.db.is_empty() {
-            info!("Clipboard is empty. You can exec `cy add <file>...` to add files.");
+            warn!("Clipboard is empty. You can exec `cy add <file>...` to add files.");
             return;
         }
 

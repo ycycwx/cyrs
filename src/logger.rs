@@ -20,7 +20,16 @@ pub fn init_logger_env() {
                 })
                 .set_bold(false);
 
-            writeln!(buf, "[cy] [{}]: {}", style.value(record.level()), style.value(record.args()))
+            if record.level() == Level::Info {
+                writeln!(buf, "[cy]: {}", style.value(record.args()))
+            } else {
+                writeln!(
+                    buf,
+                    "[cy] [{}]: {}",
+                    style.value(record.level()),
+                    style.value(record.args())
+                )
+            }
         })
         .init();
 }
