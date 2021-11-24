@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("cyrs")
         .about("A simple C-c C-v tool in command line.")
         .license("MIT")
-        .version("0.0.4")
+        .version("0.0.5")
         .author("ycycwx <yytcjcy@gmail.com>")
         .subcommand(
             App::new("add").visible_alias("a").about("Mark files into clipboard").arg(
