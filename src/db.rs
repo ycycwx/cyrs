@@ -96,10 +96,13 @@ impl DataBaseHandler for DataBase {
             let options = CopyOptions::new();
             match copy_items(&[full_path], &target_dir, &options) {
                 Ok(_) => {
-                    info!("Success copy file {} to {}.", file, target_dir);
+                    info!("Success copy file \"{}\" to \"{}\".", file, target_dir);
                 }
                 Err(err) => {
-                    error!("Fail to copy file {} to {}. Reason: {}.", file, target_dir, err);
+                    error!(
+                        "Fail to copy file \"{}\" to \"{}\". Reason: {}.",
+                        file, target_dir, err
+                    );
                 }
             };
         }
@@ -123,9 +126,9 @@ impl DataBaseHandler for DataBase {
             let full_path = canonicalize(file)?;
             let options = CopyOptions::new();
             match move_items(&[full_path], &target_dir, &options) {
-                Ok(_) => info!("Success move file {} to {}", file, target_dir),
+                Ok(_) => info!("Success move file \"{}\" to \"{}\"", file, target_dir),
                 Err(err) => {
-                    error!("Fail to move file {} to {}. Reason: {}", file, target_dir, err);
+                    error!("Fail to move file \"{}\" to \"{}\". Reason: {}", file, target_dir, err);
 
                     failed_items.push(file.to_string());
                 }
