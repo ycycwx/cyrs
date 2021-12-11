@@ -15,7 +15,7 @@ cargo install cyrs
 ## Usage
 
 ```
-cyrs 0.0.5
+cyrs 0.0.6
 
 ycycwx <yytcjcy@gmail.com>
 

@@ -23,13 +23,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let matches = App::new("cyrs")
         .about("A simple C-c C-v tool in command line.")
-        .license("MIT")
-        .version("0.0.5")
+        .version("0.0.6")
         .author("ycycwx <yytcjcy@gmail.com>")
         .subcommand(
             App::new("add").visible_alias("a").about("Mark files into clipboard").arg(
                 Arg::new("file")
-                    .about("Mark <file>s into clipboard for `COPY/MOVE`")
+                    .help("Mark <file>s into clipboard for `COPY/MOVE`")
                     .required(true)
                     .min_values(1),
             ),
@@ -40,7 +39,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .about("Copy all files in clipboard to target dir")
                 .arg(
                     Arg::new("dir")
-                        .about("Copy files into target <dir>")
+                        .help("Copy files into target <dir>")
                         .required(true)
                         .max_values(1),
                 ),
@@ -51,7 +50,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .about("Move all files in clipboard to target dir")
                 .arg(
                     Arg::new("dir")
-                        .about("Move files into target <dir>")
+                        .help("Move files into target <dir>")
                         .required(true)
                         .max_values(1),
                 ),
