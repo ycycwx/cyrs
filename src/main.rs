@@ -5,8 +5,7 @@ extern crate clap;
 
 use std::error::Error;
 
-use clap::{App, Arg, ArgMatches};
-use log::error;
+use clap::{App, AppSettings, Arg, ArgMatches};
 
 use crate::db::{DataBase, DataBaseHandler};
 use crate::logger::init_logger_env;
@@ -23,12 +22,19 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let matches = App::new("cyrs")
         .about("A simple C-c C-v tool in command line.")
-        .version("0.0.6")
+        .version("0.1.0")
         .author("ycycwx <yytcjcy@gmail.com>")
+        .setting(AppSettings::ArgsNegateSubcommands)
+        .arg(
+            Arg::new("INPUT")
+                .help("Mark files into clipboard")
+                .multiple_values(true)
+                .takes_value(true),
+        )
         .subcommand(
-            App::new("add").visible_alias("a").about("Mark files into clipboard").arg(
+            App::new("add").visible_alias("a").about("Add files into clipboard").arg(
                 Arg::new("file")
-                    .help("Mark <file>s into clipboard for `COPY/MOVE`")
+                    .help("Add <file>s into clipboard for `COPY/MOVE`")
                     .required(true)
                     .min_values(1),
             ),
@@ -65,14 +71,17 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut database = DataBase::new()?;
 
-    match matches.subcommand() {
-        Some(("add", matches)) => database.add(&unwrap_args(matches, "file"))?,
-        Some(("copy", matches)) => database.cp(&unwrap_args(matches, "dir"))?,
-        Some(("move", matches)) => database.mv(&unwrap_args(matches, "dir"))?,
-        Some(("list", _)) => database.list(),
-        Some(("reset", _)) => database.reset()?,
-        None => error!("No subcommand was used"),
-        _ => unreachable!(),
+    if let Some(inputs) = matches.values_of("INPUT") {
+        database.create(&inputs.collect::<Vec<_>>())?;
+    } else {
+        match matches.subcommand() {
+            Some(("add", matches)) => database.add(&unwrap_args(matches, "file"))?,
+            Some(("copy", matches)) => database.cp(&unwrap_args(matches, "dir"))?,
+            Some(("move", matches)) => database.mv(&unwrap_args(matches, "dir"))?,
+            Some(("list", _)) => database.list(),
+            Some(("reset", _)) => database.reset()?,
+            _ => unreachable!(),
+        }
     }
 
     Ok(())

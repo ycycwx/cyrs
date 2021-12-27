@@ -15,21 +15,23 @@ cargo install cyrs
 ## Usage
 
 ```
-cyrs 0.0.6
-
+cyrs 0.1.0
 ycycwx <yytcjcy@gmail.com>
-
 A simple C-c C-v tool in command line.
 
 USAGE:
-    cy [SUBCOMMAND]
+    cy [INPUT]...
+    cy <SUBCOMMAND>
+
+ARGS:
+    <INPUT>...    Mark files into clipboard
 
 OPTIONS:
     -h, --help       Print help information
     -V, --version    Print version information
 
 SUBCOMMANDS:
-    add      Mark files into clipboard [aliases: a]
+    add      Add files into clipboard [aliases: a]
     copy     Copy all files in clipboard to target dir [aliases: c, cp]
     help     Print this message or the help of the given subcommand(s)
     list     List all files in clipboard [aliases: l, ls, show]

@@ -34,8 +34,8 @@ fn initialize_cache_path() -> Result<PathBuf, Box<dyn Error>> {
     Ok(config_dir.join("cyrs/cy.json"))
 }
 
-fn read_config(config_path: &Path) -> Result<Vec<String>, Box<dyn Error>> {
-    let json_str = if config_path.exists() {
+fn read_config<P: AsRef<Path>>(config_path: P) -> Result<Vec<String>, Box<dyn Error>> {
+    let json_str = if config_path.as_ref().exists() {
         read_to_string(initialize_cache_path()?)?
     } else {
         File::create(config_path)?.write_all("[]".as_bytes())?;
@@ -47,9 +47,10 @@ fn read_config(config_path: &Path) -> Result<Vec<String>, Box<dyn Error>> {
 
 pub trait DataBaseHandler: Sized {
     fn new() -> Result<Self, Box<dyn Error>>;
-    fn add(&mut self, files: &[String]) -> Result<(), Box<dyn Error>>;
-    fn cp(&self, files: &[String]) -> Result<(), Box<dyn Error>>;
-    fn mv(&self, files: &[String]) -> Result<(), Box<dyn Error>>;
+    fn add<S: AsRef<str>>(&mut self, files: &[S]) -> Result<(), Box<dyn Error>>;
+    fn create<S: AsRef<str>>(&mut self, files: &[S]) -> Result<(), Box<dyn Error>>;
+    fn cp<S: AsRef<str>>(&self, files: &[S]) -> Result<(), Box<dyn Error>>;
+    fn mv<S: AsRef<str>>(&self, files: &[S]) -> Result<(), Box<dyn Error>>;
     fn list(&self);
     fn reset(&self) -> Result<(), Box<dyn Error>>;
 }
@@ -61,14 +62,13 @@ impl DataBaseHandler for DataBase {
         Ok(DataBase { cache_path: config_path, db })
     }
 
-    fn add(&mut self, files: &[String]) -> Result<(), Box<dyn Error>> {
+    fn add<S: AsRef<str>>(&mut self, files: &[S]) -> Result<(), Box<dyn Error>> {
         for file in files {
-            let full_path = canonicalize(file)?;
+            let full_path = canonicalize(file.as_ref())?;
             let real_path = full_path.as_path().display().to_string();
             if self.db.contains(&real_path) {
                 warn!("\"{}\" is duplicated in clipboard.", &real_path);
             } else {
-                let full_path = canonicalize(file)?;
                 self.db.push(full_path.as_path().display().to_string());
             }
         }
@@ -79,7 +79,23 @@ impl DataBaseHandler for DataBase {
         Ok(())
     }
 
-    fn cp(&self, files: &[String]) -> Result<(), Box<dyn Error>> {
+    fn create<S: AsRef<str>>(&mut self, files: &[S]) -> Result<(), Box<dyn Error>> {
+        let mut db = vec![];
+        for file in files {
+            let full_path = canonicalize(file.as_ref())?;
+            let real_path = full_path.as_path().display().to_string();
+            db.push(real_path);
+        }
+        self.db = db;
+
+        let mut config = File::create(initialize_cache_path()?)?;
+        let json = serde_json::to_string_pretty(&self.db)?;
+        write!(config, "{}", json)?;
+
+        Ok(())
+    }
+
+    fn cp<S: AsRef<str>>(&self, files: &[S]) -> Result<(), Box<dyn Error>> {
         if self.db.is_empty() {
             warn!("You must exec `cy add <file>...` first.");
             return Ok(());
@@ -90,7 +106,7 @@ impl DataBaseHandler for DataBase {
             return Ok(());
         }
 
-        let target_dir = canonicalize(&files[0])?.as_path().display().to_string();
+        let target_dir = canonicalize(&files[0].as_ref())?.as_path().display().to_string();
         for file in &self.db {
             let full_path = canonicalize(file)?;
             let options = CopyOptions::new();
@@ -109,7 +125,7 @@ impl DataBaseHandler for DataBase {
         Ok(())
     }
 
-    fn mv(&self, files: &[String]) -> Result<(), Box<dyn Error>> {
+    fn mv<S: AsRef<str>>(&self, files: &[S]) -> Result<(), Box<dyn Error>> {
         if self.db.is_empty() {
             warn!("You must exec `cy add <file>...` first.");
             return Ok(());
@@ -121,7 +137,7 @@ impl DataBaseHandler for DataBase {
         }
 
         let mut failed_items: Vec<String> = vec![];
-        let target_dir = canonicalize(&files[0])?.as_path().display().to_string();
+        let target_dir = canonicalize(&files[0].as_ref())?.as_path().display().to_string();
         for file in &self.db {
             let full_path = canonicalize(file)?;
             let options = CopyOptions::new();
