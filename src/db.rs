@@ -4,7 +4,6 @@ extern crate serde;
 extern crate serde_json;
 
 use std::env;
-use std::error::Error;
 use std::fs::canonicalize;
 use std::fs::create_dir_all;
 use std::fs::read_to_string;
@@ -12,6 +11,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use anyhow::Result;
 use fs_extra::copy_items;
 use fs_extra::dir::CopyOptions;
 use fs_extra::move_items;
@@ -27,14 +27,14 @@ pub struct DataBase {
     db: Vec<String>,
 }
 
-fn initialize_cache_path() -> Result<PathBuf, Box<dyn Error>> {
+fn initialize_cache_path() -> Result<PathBuf> {
     let home = env::var("HOME")?;
     let config_dir = PathBuf::from(&home).join(".cache");
     create_dir_all(&config_dir.join("cyrs"))?;
     Ok(config_dir.join("cyrs/cy.json"))
 }
 
-fn read_config<P: AsRef<Path>>(config_path: P) -> Result<Vec<String>, Box<dyn Error>> {
+fn read_config<P: AsRef<Path>>(config_path: P) -> Result<Vec<String>> {
     let json_str = if config_path.as_ref().exists() {
         read_to_string(initialize_cache_path()?)?
     } else {
@@ -46,23 +46,23 @@ fn read_config<P: AsRef<Path>>(config_path: P) -> Result<Vec<String>, Box<dyn Er
 }
 
 pub trait DataBaseHandler: Sized {
-    fn new() -> Result<Self, Box<dyn Error>>;
-    fn add<S: AsRef<str>>(&mut self, files: &[S]) -> Result<(), Box<dyn Error>>;
-    fn create<S: AsRef<str>>(&mut self, files: &[S]) -> Result<(), Box<dyn Error>>;
-    fn cp<S: AsRef<str>>(&self, files: &[S]) -> Result<(), Box<dyn Error>>;
-    fn mv<S: AsRef<str>>(&self, files: &[S]) -> Result<(), Box<dyn Error>>;
+    fn new() -> Result<Self>;
+    fn add<S: AsRef<str>>(&mut self, files: &[S]) -> Result<()>;
+    fn create<S: AsRef<str>>(&mut self, files: &[S]) -> Result<()>;
+    fn cp<S: AsRef<str>>(&self, files: &[S]) -> Result<()>;
+    fn mv<S: AsRef<str>>(&self, files: &[S]) -> Result<()>;
     fn list(&self);
-    fn reset(&self) -> Result<(), Box<dyn Error>>;
+    fn reset(&self) -> Result<()>;
 }
 
 impl DataBaseHandler for DataBase {
-    fn new() -> Result<Self, Box<dyn Error>> {
+    fn new() -> Result<Self> {
         let config_path = initialize_cache_path()?;
         let db = read_config(&config_path)?;
         Ok(DataBase { cache_path: config_path, db })
     }
 
-    fn add<S: AsRef<str>>(&mut self, files: &[S]) -> Result<(), Box<dyn Error>> {
+    fn add<S: AsRef<str>>(&mut self, files: &[S]) -> Result<()> {
         for file in files {
             let full_path = canonicalize(file.as_ref())?;
             let real_path = full_path.as_path().display().to_string();
@@ -79,7 +79,7 @@ impl DataBaseHandler for DataBase {
         Ok(())
     }
 
-    fn create<S: AsRef<str>>(&mut self, files: &[S]) -> Result<(), Box<dyn Error>> {
+    fn create<S: AsRef<str>>(&mut self, files: &[S]) -> Result<()> {
         let mut db = vec![];
         for file in files {
             let full_path = canonicalize(file.as_ref())?;
@@ -95,7 +95,7 @@ impl DataBaseHandler for DataBase {
         Ok(())
     }
 
-    fn cp<S: AsRef<str>>(&self, files: &[S]) -> Result<(), Box<dyn Error>> {
+    fn cp<S: AsRef<str>>(&self, files: &[S]) -> Result<()> {
         if self.db.is_empty() {
             warn!("You must exec `cy add <file>...` first.");
             return Ok(());
@@ -125,7 +125,7 @@ impl DataBaseHandler for DataBase {
         Ok(())
     }
 
-    fn mv<S: AsRef<str>>(&self, files: &[S]) -> Result<(), Box<dyn Error>> {
+    fn mv<S: AsRef<str>>(&self, files: &[S]) -> Result<()> {
         if self.db.is_empty() {
             warn!("You must exec `cy add <file>...` first.");
             return Ok(());
@@ -169,7 +169,7 @@ impl DataBaseHandler for DataBase {
         })
     }
 
-    fn reset(&self) -> Result<(), Box<dyn Error>> {
+    fn reset(&self) -> Result<()> {
         let mut config = File::create(&self.cache_path)?;
         match write!(config, "[]") {
             Ok(()) => info!("Reset clipboard successfully."),

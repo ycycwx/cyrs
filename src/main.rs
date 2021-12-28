@@ -3,7 +3,7 @@ mod logger;
 
 extern crate clap;
 
-use std::error::Error;
+use anyhow::Result;
 
 use clap::{App, AppSettings, Arg, ArgMatches};
 
@@ -17,7 +17,7 @@ fn unwrap_args(arg_matches: &ArgMatches, id: &str) -> Vec<String> {
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
     init_logger_env();
 
     let matches = App::new("cyrs")
