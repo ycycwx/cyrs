@@ -2,7 +2,7 @@
 name = "cyrs"
 version = "0.1.1"
 authors = ["ycycwx <yytcjcy@gmail.com>"]
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = """
 A simple C-c C-v tool in command line.
