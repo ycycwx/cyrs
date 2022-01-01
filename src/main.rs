@@ -22,7 +22,7 @@ fn main() -> Result<()> {
 
     let matches = App::new("cyrs")
         .about("A simple C-c C-v tool in command line.")
-        .version("0.1.0")
+        .version("0.1.1")
         .author("ycycwx <yytcjcy@gmail.com>")
         .setting(AppSettings::ArgsNegateSubcommands)
         .arg(
