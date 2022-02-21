@@ -5,7 +5,7 @@ extern crate clap;
 
 use anyhow::Result;
 
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 
 use crate::db::{DataBase, DataBaseHandler};
 use crate::logger::init_logger_env;
@@ -20,11 +20,11 @@ fn unwrap_args(arg_matches: &ArgMatches, id: &str) -> Vec<String> {
 fn main() -> Result<()> {
     init_logger_env();
 
-    let matches = App::new("cyrs")
+    let matches = Command::new("cyrs")
         .about("A simple C-c C-v tool in command line.")
-        .version("0.1.1")
+        .version("0.2.0")
         .author("ycycwx <yytcjcy@gmail.com>")
-        .setting(AppSettings::ArgsNegateSubcommands)
+        .args_conflicts_with_subcommands(true)
         .arg(
             Arg::new("INPUT")
                 .help("Mark files into clipboard")
@@ -32,7 +32,7 @@ fn main() -> Result<()> {
                 .takes_value(true),
         )
         .subcommand(
-            App::new("add").visible_alias("a").about("Add files into clipboard").arg(
+            Command::new("add").visible_alias("a").about("Add files into clipboard").arg(
                 Arg::new("file")
                     .help("Add <file>s into clipboard for `COPY/MOVE`")
                     .required(true)
@@ -40,7 +40,7 @@ fn main() -> Result<()> {
             ),
         )
         .subcommand(
-            App::new("copy")
+            Command::new("copy")
                 .visible_aliases(&["c", "cp"])
                 .about("Copy all files in clipboard to target dir")
                 .arg(
@@ -51,7 +51,7 @@ fn main() -> Result<()> {
                 ),
         )
         .subcommand(
-            App::new("move")
+            Command::new("move")
                 .visible_aliases(&["m", "mv"])
                 .about("Move all files in clipboard to target dir")
                 .arg(
@@ -62,11 +62,11 @@ fn main() -> Result<()> {
                 ),
         )
         .subcommand(
-            App::new("list")
+            Command::new("list")
                 .visible_aliases(&["l", "ls", "show"])
                 .about("List all files in clipboard"),
         )
-        .subcommand(App::new("reset").visible_alias("clear").about("Reset clipboard"))
+        .subcommand(Command::new("reset").visible_alias("clear").about("Reset clipboard"))
         .get_matches();
 
     let mut database = DataBase::new()?;
