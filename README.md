@@ -15,7 +15,7 @@ cargo install cyrs
 ## Usage
 
 ```
-cyrs 0.2.0
+cyrs 0.2.1
 ycycwx <yytcjcy@gmail.com>
 A simple C-c C-v tool in command line.
 
