@@ -11,7 +11,7 @@ use crate::db::{DataBase, DataBaseHandler};
 use crate::logger::init_logger_env;
 
 fn unwrap_args(arg_matches: &ArgMatches, id: &str) -> Vec<String> {
-    match arg_matches.values_of(id) {
+    match arg_matches.get_many::<String>(id) {
         Some(matches) => matches.map(|s| s.to_string()).collect::<Vec<_>>(),
         None => vec![],
     }
@@ -71,7 +71,7 @@ fn main() -> Result<()> {
 
     let mut database = DataBase::new()?;
 
-    if let Some(inputs) = matches.values_of("INPUT") {
+    if let Some(inputs) = matches.get_many::<String>("INPUT") {
         database.create(&inputs.collect::<Vec<_>>())?;
     } else {
         match matches.subcommand() {
