@@ -22,4 +22,4 @@ env_logger = "0.9.1"
 fs_extra = "1.2.0"
 log = { version = "0.4.17", features = ["std", "serde"] }
 serde = { version = "1.0.147", features = ["derive"] }
-serde_json = "1.0.86"
+serde_json = "1.0.87"
