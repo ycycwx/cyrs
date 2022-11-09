@@ -18,7 +18,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.66"
 clap = { version = "3.2.23", features = ["deprecated"] }
-env_logger = "0.9.1"
+env_logger = "0.9.3"
 fs_extra = "1.2.0"
 log = { version = "0.4.17", features = ["std", "serde"] }
 serde = { version = "1.0.147", features = ["derive"] }
