@@ -1,6 +1,6 @@
 [package]
 name = "cyrs"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["ycycwx <yytcjcy@gmail.com>"]
 edition = "2021"
 license = "MIT"
@@ -16,8 +16,8 @@ name = "cy"
 path = "src/main.rs"
 
 [dependencies]
-anyhow = "1.0.67"
-clap = { version = "3.2.23", features = ["deprecated"] }
+anyhow = "1.0.68"
+clap = { version = "4.0.32", features = ["deprecated"] }
 env_logger = "0.10.0"
 fs_extra = "1.2.0"
 log = { version = "0.4.17", features = ["std", "serde"] }

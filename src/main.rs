@@ -22,48 +22,43 @@ fn main() -> Result<()> {
 
     let matches = Command::new("cyrs")
         .about("A simple C-c C-v tool in command line.")
-        .version("0.2.1")
+        .version("0.3.0")
         .author("ycycwx <yytcjcy@gmail.com>")
         .args_conflicts_with_subcommands(true)
-        .arg(
-            Arg::new("INPUT")
-                .help("Mark files into clipboard")
-                .multiple_values(true)
-                .takes_value(true),
-        )
+        .arg(Arg::new("INPUT").help("Mark files into clipboard").num_args(1..))
         .subcommand(
             Command::new("add").visible_alias("a").about("Add files into clipboard").arg(
                 Arg::new("file")
                     .help("Add <file>s into clipboard for `COPY/MOVE`")
                     .required(true)
-                    .min_values(1),
+                    .num_args(1..),
             ),
         )
         .subcommand(
             Command::new("copy")
-                .visible_aliases(&["c", "cp"])
+                .visible_aliases(["c", "cp"])
                 .about("Copy all files in clipboard to target dir")
                 .arg(
                     Arg::new("dir")
                         .help("Copy files into target <dir>")
                         .required(true)
-                        .max_values(1),
+                        .num_args(0..=1),
                 ),
         )
         .subcommand(
             Command::new("move")
-                .visible_aliases(&["m", "mv"])
+                .visible_aliases(["m", "mv"])
                 .about("Move all files in clipboard to target dir")
                 .arg(
                     Arg::new("dir")
                         .help("Move files into target <dir>")
                         .required(true)
-                        .max_values(1),
+                        .num_args(0..=1),
                 ),
         )
         .subcommand(
             Command::new("list")
-                .visible_aliases(&["l", "ls", "show"])
+                .visible_aliases(["l", "ls", "show"])
                 .about("List all files in clipboard"),
         )
         .subcommand(Command::new("reset").visible_alias("clear").about("Reset clipboard"))

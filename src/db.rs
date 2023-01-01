@@ -30,7 +30,7 @@ pub struct DataBase {
 fn initialize_cache_path() -> Result<PathBuf> {
     let home = env::var("HOME")?;
     let config_dir = PathBuf::from(&home).join(".cache");
-    create_dir_all(&config_dir.join("cyrs"))?;
+    create_dir_all(config_dir.join("cyrs"))?;
     Ok(config_dir.join("cyrs/cy.json"))
 }
 
@@ -106,7 +106,7 @@ impl DataBaseHandler for DataBase {
             return Ok(());
         }
 
-        let target_dir = canonicalize(&files[0].as_ref())?.as_path().display().to_string();
+        let target_dir = canonicalize(files[0].as_ref())?.as_path().display().to_string();
         for file in &self.db {
             let full_path = canonicalize(file)?;
             let options = CopyOptions::new();
@@ -137,7 +137,7 @@ impl DataBaseHandler for DataBase {
         }
 
         let mut failed_items: Vec<String> = vec![];
-        let target_dir = canonicalize(&files[0].as_ref())?.as_path().display().to_string();
+        let target_dir = canonicalize(files[0].as_ref())?.as_path().display().to_string();
         for file in &self.db {
             let full_path = canonicalize(file)?;
             let options = CopyOptions::new();
