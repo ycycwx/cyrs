@@ -16,7 +16,7 @@ name = "cy"
 path = "src/main.rs"
 
 [dependencies]
-anyhow = "1.0.68"
+anyhow = "1.0.69"
 clap = { version = "4.1.4", features = ["deprecated"] }
 env_logger = "0.10.0"
 fs_extra = "1.2.0"
