@@ -28,7 +28,7 @@ pub struct DataBase {
 }
 
 fn initialize_cache_path() -> Result<PathBuf> {
-    let home = env::var("HOME")?;
+    let home = env::var("HOME").or_else(|_| env::var("USERPROFILE"))?;
     let config_dir = PathBuf::from(&home).join(".cache");
     create_dir_all(config_dir.join("cyrs"))?;
     Ok(config_dir.join("cyrs/cy.json"))

@@ -65,3 +65,19 @@ fn positional_file_can_still_initialize_clipboard_without_a_subcommand() {
     let files: Vec<String> = serde_json::from_str(&clipboard).unwrap();
     assert_eq!(files, vec![fs::canonicalize(file).unwrap().to_str().unwrap()]);
 }
+
+#[test]
+fn userprofile_is_used_when_home_is_unset() {
+    let home = TestHome::new();
+    let output = Command::new(env!("CARGO_BIN_EXE_cy"))
+        .arg("list")
+        .env_remove("HOME")
+        .env("USERPROFILE", &home.0)
+        .output()
+        .unwrap();
+
+    assert!(output.status.success(), "{output:?}");
+    let clipboard = fs::read_to_string(home.0.join(".cache/cyrs/cy.json")).unwrap();
+    let files: Vec<String> = serde_json::from_str(&clipboard).unwrap();
+    assert!(files.is_empty());
+}
