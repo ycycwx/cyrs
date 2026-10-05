@@ -24,6 +24,7 @@ fn main() -> Result<()> {
         .about("A simple C-c C-v tool in command line.")
         .version("0.3.2")
         .author("ycycwx <yytcjcy@gmail.com>")
+        .arg_required_else_help(true)
         .args_conflicts_with_subcommands(true)
         .arg(Arg::new("INPUT").help("Mark files into clipboard").num_args(1..))
         .subcommand(
