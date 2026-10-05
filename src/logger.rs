@@ -15,13 +15,7 @@ pub fn init_logger_env() {
             let style_end = style.render_reset();
 
             if record.level() == Level::Info {
-                writeln!(
-                    buf,
-                    "[cy]: {}{}{}",
-                    style_start,
-                    record.args(),
-                    style_end
-                )
+                writeln!(buf, "[cy]: {}{}{}", style_start, record.args(), style_end)
             } else {
                 writeln!(
                     buf,

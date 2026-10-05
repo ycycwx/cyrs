@@ -35,10 +35,11 @@ fn initialize_cache_path() -> Result<PathBuf> {
 }
 
 fn read_config<P: AsRef<Path>>(config_path: P) -> Result<Vec<String>> {
-    let json_str = if config_path.as_ref().exists() {
-        read_to_string(initialize_cache_path()?)?
+    let path = config_path.as_ref();
+    let json_str = if path.exists() {
+        read_to_string(path)?
     } else {
-        File::create(config_path)?.write_all("[]".as_bytes())?;
+        File::create(path)?.write_all(b"[]")?;
         "[]".to_string()
     };
     let value: Vec<String> = serde_json::from_str(&json_str)?;
@@ -53,6 +54,15 @@ pub trait DataBaseHandler: Sized {
     fn mv<S: AsRef<str>>(&self, files: &[S]) -> Result<()>;
     fn list(&self);
     fn reset(&self) -> Result<()>;
+}
+
+impl DataBase {
+    fn save(&self) -> Result<()> {
+        let mut config = File::create(&self.cache_path)?;
+        let json = serde_json::to_string_pretty(&self.db)?;
+        write!(config, "{}", json)?;
+        Ok(())
+    }
 }
 
 impl DataBaseHandler for DataBase {
@@ -73,10 +83,7 @@ impl DataBaseHandler for DataBase {
             }
         }
 
-        let mut config = File::create(initialize_cache_path()?)?;
-        let json = serde_json::to_string_pretty(&self.db)?;
-        write!(config, "{}", json)?;
-        Ok(())
+        self.save()
     }
 
     fn create<S: AsRef<str>>(&mut self, files: &[S]) -> Result<()> {
@@ -88,11 +95,7 @@ impl DataBaseHandler for DataBase {
         }
         self.db = db;
 
-        let mut config = File::create(initialize_cache_path()?)?;
-        let json = serde_json::to_string_pretty(&self.db)?;
-        write!(config, "{}", json)?;
-
-        Ok(())
+        self.save()
     }
 
     fn cp<S: AsRef<str>>(&self, files: &[S]) -> Result<()> {
@@ -165,7 +168,7 @@ impl DataBaseHandler for DataBase {
         }
 
         self.db.iter().enumerate().for_each(|(index, item)| {
-            info!("{}", (index + 1).to_string() + ". " + item);
+            info!("{}. {}", index + 1, item);
         })
     }
 
@@ -176,5 +179,70 @@ impl DataBaseHandler for DataBase {
             Err(err) => error!("{}", err.to_string()),
         };
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{read_config, DataBase, DataBaseHandler};
+    use std::fs;
+    use std::path::PathBuf;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    static NEXT_DIRECTORY_ID: AtomicUsize = AtomicUsize::new(0);
+
+    struct TestDirectory(PathBuf);
+
+    impl TestDirectory {
+        fn new() -> Self {
+            let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+            let id = NEXT_DIRECTORY_ID.fetch_add(1, Ordering::Relaxed);
+            let directory = std::env::temp_dir()
+                .join(format!("cyrs-db-test-{}-{timestamp}-{id}", std::process::id()));
+            fs::create_dir(&directory).unwrap();
+            Self(directory)
+        }
+    }
+
+    impl Drop for TestDirectory {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn reads_the_supplied_config_path() {
+        let directory = TestDirectory::new();
+        let config_path = directory.0.join("clipboard.json");
+        fs::write(&config_path, r#"["provided-config"]"#).unwrap();
+
+        assert_eq!(read_config(config_path).unwrap(), vec!["provided-config"]);
+    }
+
+    #[test]
+    fn create_and_add_write_to_the_database_cache_path() {
+        let directory = TestDirectory::new();
+        let cache_path = directory.0.join("clipboard.json");
+        fs::write(&cache_path, b"[]").unwrap();
+        let first = directory.0.join("first.txt");
+        let second = directory.0.join("second.txt");
+        fs::write(&first, "first").unwrap();
+        fs::write(&second, "second").unwrap();
+        let mut database = DataBase { cache_path: cache_path.clone(), db: vec![] };
+
+        database.create(&[first.to_str().unwrap()]).unwrap();
+
+        let saved: Vec<String> =
+            serde_json::from_str(&fs::read_to_string(&cache_path).unwrap()).unwrap();
+        let first_path = fs::canonicalize(&first).unwrap().to_str().unwrap().to_string();
+        assert_eq!(saved, vec![first_path.clone()]);
+
+        database.add(&[second.to_str().unwrap()]).unwrap();
+
+        let saved: Vec<String> =
+            serde_json::from_str(&fs::read_to_string(&cache_path).unwrap()).unwrap();
+        let second_path = fs::canonicalize(&second).unwrap().to_str().unwrap().to_string();
+        assert_eq!(saved, vec![first_path, second_path]);
     }
 }
