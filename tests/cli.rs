@@ -81,3 +81,37 @@ fn userprofile_is_used_when_home_is_unset() {
     let files: Vec<String> = serde_json::from_str(&clipboard).unwrap();
     assert!(files.is_empty());
 }
+
+#[test]
+fn all_invalid_positional_files_preserve_existing_clipboard() {
+    let home = TestHome::new();
+    let cache_path = home.0.join(".cache/cyrs/cy.json");
+    fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+    let original = "[\n  \"original.txt\"\n]\n";
+    fs::write(&cache_path, original).unwrap();
+    let first = home.0.join("missing-first.txt");
+    let second = home.0.join("missing-second.txt");
+
+    let output = home.run(&[first.to_str().unwrap(), second.to_str().unwrap()]);
+
+    assert!(!output.status.success(), "{output:?}");
+    assert_eq!(fs::read_to_string(cache_path).unwrap(), original);
+}
+
+#[test]
+fn mixed_positional_files_replace_clipboard_with_valid_files() {
+    let home = TestHome::new();
+    let cache_path = home.0.join(".cache/cyrs/cy.json");
+    fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+    fs::write(&cache_path, r#"["original.txt"]"#).unwrap();
+    let missing = home.0.join("missing.txt");
+    let valid = home.0.join("valid.txt");
+    fs::write(&valid, "valid clipboard input").unwrap();
+
+    let output = home.run(&[missing.to_str().unwrap(), valid.to_str().unwrap()]);
+
+    assert!(output.status.success(), "{output:?}");
+    let files: Vec<String> =
+        serde_json::from_str(&fs::read_to_string(cache_path).unwrap()).unwrap();
+    assert_eq!(files, vec![fs::canonicalize(valid).unwrap().to_str().unwrap()]);
+}
