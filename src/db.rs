@@ -53,7 +53,7 @@ pub trait DataBaseHandler: Sized {
     fn cp<S: AsRef<str>>(&self, files: &[S]) -> Result<()>;
     fn mv<S: AsRef<str>>(&self, files: &[S]) -> Result<()>;
     fn list(&self);
-    fn reset(&self) -> Result<()>;
+    fn reset(&mut self) -> Result<()>;
 }
 
 impl DataBase {
@@ -180,12 +180,10 @@ impl DataBaseHandler for DataBase {
         })
     }
 
-    fn reset(&self) -> Result<()> {
-        let mut config = File::create(&self.cache_path)?;
-        match write!(config, "[]") {
-            Ok(()) => info!("Reset clipboard successfully."),
-            Err(err) => error!("{}", err.to_string()),
-        };
+    fn reset(&mut self) -> Result<()> {
+        File::create(&self.cache_path)?.write_all(b"[]")?;
+        self.db.clear();
+        info!("Reset clipboard successfully.");
         Ok(())
     }
 }
@@ -252,6 +250,34 @@ mod tests {
             serde_json::from_str(&fs::read_to_string(&cache_path).unwrap()).unwrap();
         let second_path = fs::canonicalize(&second).unwrap().to_str().unwrap().to_string();
         assert_eq!(saved, vec![first_path, second_path]);
+    }
+
+    #[test]
+    fn reset_propagates_save_errors_and_preserves_memory() {
+        let directory = TestDirectory::new();
+        let mut database =
+            DataBase { cache_path: directory.0.clone(), db: vec!["original.txt".to_string()] };
+
+        let result = database.reset();
+
+        assert!(result.is_err(), "reset must report a failed clipboard write");
+        assert_eq!(database.db, vec!["original.txt"]);
+    }
+
+    #[test]
+    fn reset_clears_persisted_and_in_memory_clipboard() {
+        let directory = TestDirectory::new();
+        let cache_path = directory.0.join("clipboard.json");
+        fs::write(&cache_path, r#"["original.txt"]"#).unwrap();
+        let mut database =
+            DataBase { cache_path: cache_path.clone(), db: vec!["original.txt".to_string()] };
+
+        database.reset().unwrap();
+
+        let saved: Vec<String> =
+            serde_json::from_str(&fs::read_to_string(cache_path).unwrap()).unwrap();
+        assert!(saved.is_empty());
+        assert!(database.db.is_empty());
     }
 
     #[test]
