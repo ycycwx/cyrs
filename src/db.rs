@@ -50,7 +50,7 @@ pub trait DataBaseHandler: Sized {
     fn new() -> Result<Self>;
     fn add<S: AsRef<str>>(&mut self, files: &[S]) -> Result<()>;
     fn create<S: AsRef<str>>(&mut self, files: &[S]) -> Result<()>;
-    fn cp<S: AsRef<str>>(&self, files: &[S]) -> Result<()>;
+    fn cp<S: AsRef<str>>(&mut self, files: &[S]) -> Result<()>;
     fn mv<S: AsRef<str>>(&self, files: &[S]) -> Result<()>;
     fn list(&self);
     fn reset(&mut self) -> Result<()>;
@@ -116,7 +116,7 @@ impl DataBaseHandler for DataBase {
         self.save()
     }
 
-    fn cp<S: AsRef<str>>(&self, files: &[S]) -> Result<()> {
+    fn cp<S: AsRef<str>>(&mut self, files: &[S]) -> Result<()> {
         if self.db.is_empty() {
             warn!("You must exec `cy add <file>...` first.");
             return Ok(());
@@ -128,21 +128,35 @@ impl DataBaseHandler for DataBase {
         }
 
         let target_dir = canonicalize(files[0].as_ref())?.as_path().display().to_string();
+        let mut to_remove = vec![];
+
         for file in &self.db {
-            let full_path = canonicalize(file)?;
-            let options = CopyOptions::new();
-            match copy_items(&[full_path], &target_dir, &options) {
-                Ok(_) => {
-                    info!("Success copy file \"{}\" to \"{}\".", file, target_dir);
+            match canonicalize(file) {
+                Ok(full_path) => {
+                    let options = CopyOptions::new();
+                    match copy_items(&[full_path], &target_dir, &options) {
+                        Ok(_) => info!("Success copy file \"{}\" to \"{}\".", file, target_dir),
+                        Err(err) => error!(
+                            "Fail to copy file \"{}\" to \"{}\". Reason: {}.",
+                            file, target_dir, err
+                        ),
+                    }
+                }
+                Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+                    warn!("File \"{}\" no longer exists, skipping.", file);
+                    to_remove.push(file.clone());
                 }
                 Err(err) => {
-                    error!(
-                        "Fail to copy file \"{}\" to \"{}\". Reason: {}.",
-                        file, target_dir, err
-                    );
+                    error!("Fail to copy file \"{}\". Reason: {}", file, err);
                 }
-            };
+            }
         }
+
+        if !to_remove.is_empty() {
+            self.db.retain(|x| !to_remove.contains(x));
+            self.save()?;
+        }
+
         Ok(())
     }
 
@@ -324,5 +338,78 @@ mod tests {
         assert!(result.is_err(), "add must report when every input is invalid");
         assert_eq!(database.db, vec!["original.txt"]);
         assert_eq!(fs::read_to_string(cache_path).unwrap(), original);
+    }
+
+    #[test]
+    fn copy_cleans_missing_entries_and_keeps_successful_and_failed_sources() {
+        let directory = TestDirectory::new();
+        let cache_path = directory.0.join("clipboard.json");
+        let target = directory.0.join("target");
+        fs::create_dir(&target).unwrap();
+        let missing = directory.0.join("missing.txt").to_str().unwrap().to_string();
+        let conflict = directory.0.join("conflict.txt");
+        let valid = directory.0.join("valid.txt");
+        fs::write(&conflict, "source content").unwrap();
+        fs::write(target.join("conflict.txt"), "existing target").unwrap();
+        fs::write(&valid, "valid content").unwrap();
+        let conflict_path = fs::canonicalize(&conflict).unwrap().to_str().unwrap().to_string();
+        let valid_path = fs::canonicalize(&valid).unwrap().to_str().unwrap().to_string();
+        let entries = vec![missing, conflict_path.clone(), valid_path.clone()];
+        fs::write(&cache_path, serde_json::to_string(&entries).unwrap()).unwrap();
+        let mut database = DataBase { cache_path: cache_path.clone(), db: entries };
+
+        database.cp(&[target.to_str().unwrap()]).unwrap();
+
+        assert_eq!(fs::read_to_string(target.join("valid.txt")).unwrap(), "valid content");
+        assert_eq!(fs::read_to_string(&valid).unwrap(), "valid content");
+        assert_eq!(fs::read_to_string(target.join("conflict.txt")).unwrap(), "existing target");
+        assert_eq!(fs::read_to_string(&conflict).unwrap(), "source content");
+        assert_eq!(database.db, vec![conflict_path, valid_path]);
+        let saved: Vec<String> =
+            serde_json::from_str(&fs::read_to_string(cache_path).unwrap()).unwrap();
+        assert_eq!(saved, database.db);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn copy_preserves_inaccessible_entries_and_continues() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = TestDirectory::new();
+        let cache_path = directory.0.join("clipboard.json");
+        let restricted = directory.0.join("restricted");
+        let target = directory.0.join("target");
+        fs::create_dir(&restricted).unwrap();
+        fs::create_dir(&target).unwrap();
+        let source = restricted.join("source.txt");
+        let valid = directory.0.join("valid.txt");
+        fs::write(&source, "restricted content").unwrap();
+        fs::write(&valid, "valid content").unwrap();
+        let source_path = fs::canonicalize(&source).unwrap().to_str().unwrap().to_string();
+        let valid_path = fs::canonicalize(&valid).unwrap().to_str().unwrap().to_string();
+        let entries = vec![source_path, valid_path];
+        fs::write(&cache_path, serde_json::to_string(&entries).unwrap()).unwrap();
+        let mut database = DataBase { cache_path: cache_path.clone(), db: entries.clone() };
+        let permissions = fs::metadata(&restricted).unwrap().permissions();
+        fs::set_permissions(&restricted, fs::Permissions::from_mode(0o000)).unwrap();
+        let access = fs::canonicalize(&source);
+        if access.is_ok() {
+            fs::set_permissions(&restricted, permissions).unwrap();
+            eprintln!("Skipping permission test: this user can bypass directory permissions");
+            return;
+        }
+
+        let result = database.cp(&[target.to_str().unwrap()]);
+        fs::set_permissions(&restricted, permissions).unwrap();
+
+        assert_eq!(access.unwrap_err().kind(), std::io::ErrorKind::PermissionDenied);
+        result.unwrap();
+        assert_eq!(database.db, entries);
+        let saved: Vec<String> =
+            serde_json::from_str(&fs::read_to_string(cache_path).unwrap()).unwrap();
+        assert_eq!(saved, entries);
+        assert_eq!(fs::read_to_string(source).unwrap(), "restricted content");
+        assert!(!target.join("source.txt").exists());
+        assert_eq!(fs::read_to_string(target.join("valid.txt")).unwrap(), "valid content");
     }
 }
