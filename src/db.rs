@@ -73,16 +73,26 @@ impl DataBaseHandler for DataBase {
     }
 
     fn add<S: AsRef<str>>(&mut self, files: &[S]) -> Result<()> {
+        let mut has_valid_input = false;
         for file in files {
-            let full_path = canonicalize(file.as_ref())?;
-            let real_path = full_path.as_path().display().to_string();
-            if self.db.contains(&real_path) {
-                warn!("\"{}\" is duplicated in clipboard.", &real_path);
-            } else {
-                self.db.push(full_path.as_path().display().to_string());
+            match canonicalize(file.as_ref()) {
+                Ok(full_path) => {
+                    has_valid_input = true;
+                    let real_path = full_path.as_path().display().to_string();
+                    if self.db.contains(&real_path) {
+                        warn!("\"{}\" is duplicated in clipboard.", real_path);
+                    } else {
+                        self.db.push(real_path);
+                    }
+                }
+                Err(err) => {
+                    error!("Fail to add \"{}\". Reason: {}", file.as_ref(), err);
+                }
             }
         }
-
+        if !files.is_empty() && !has_valid_input {
+            anyhow::bail!("No valid files to add to clipboard.");
+        }
         self.save()
     }
 
@@ -294,6 +304,24 @@ mod tests {
         let result = database.create(&[first.to_str().unwrap(), second.to_str().unwrap()]);
 
         assert!(result.is_err(), "create must report when every input is invalid");
+        assert_eq!(database.db, vec!["original.txt"]);
+        assert_eq!(fs::read_to_string(cache_path).unwrap(), original);
+    }
+
+    #[test]
+    fn add_with_only_invalid_inputs_preserves_clipboard() {
+        let directory = TestDirectory::new();
+        let cache_path = directory.0.join("clipboard.json");
+        let original = r#"["original.txt"]"#;
+        fs::write(&cache_path, original).unwrap();
+        let mut database =
+            DataBase { cache_path: cache_path.clone(), db: vec!["original.txt".to_string()] };
+        let first = directory.0.join("missing-first.txt");
+        let second = directory.0.join("missing-second.txt");
+
+        let result = database.add(&[first.to_str().unwrap(), second.to_str().unwrap()]);
+
+        assert!(result.is_err(), "add must report when every input is invalid");
         assert_eq!(database.db, vec!["original.txt"]);
         assert_eq!(fs::read_to_string(cache_path).unwrap(), original);
     }
