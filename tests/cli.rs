@@ -6,6 +6,18 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 static NEXT_HOME_ID: AtomicUsize = AtomicUsize::new(0);
 
+#[test]
+fn version_matches_package_without_initializing_clipboard() {
+    let home = TestHome::new();
+    let output = home.run(&["--version"]);
+    assert!(output.status.success(), "{output:?}");
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap().trim(),
+        format!("cyrs {}", env!("CARGO_PKG_VERSION"))
+    );
+    assert!(!home.0.join(".cache/cyrs").exists());
+}
+
 struct TestHome(PathBuf);
 
 impl TestHome {

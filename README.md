@@ -35,3 +35,7 @@ Options:
   -h, --help     Print help information
   -V, --version  Print version information
 ```
+
+## Release
+
+Push a `v<version>` tag matching `Cargo.toml` to publish to crates.io via GitHub Actions.

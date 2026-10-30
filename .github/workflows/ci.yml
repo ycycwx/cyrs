@@ -1,17 +1,15 @@
-on: [push]
-
 name: CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
 
 jobs:
   build_and_test:
-    name: Rust project
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --all-features
+      - run: rustup toolchain install stable --profile minimal
+      - run: cargo +stable test --locked --all-features
+      - run: cargo +stable build --locked --release --all-features
